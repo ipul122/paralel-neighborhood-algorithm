@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import numpy as NP
-=======
 """import numpy as NP
->>>>>>> e362550 (Final push all files)
 #from numba import jit
 
 #@jit(nopython=True, fastmath=True)
@@ -82,8 +78,6 @@ def forward(model, frequencies, Obsres, Obsphs):
         
     return misfits,all_apparent_res,all_phases
 
-<<<<<<< HEAD
-=======
 """
 
 import numpy as np
@@ -146,4 +140,3 @@ def forward(model, frequencies, Obsres, Obsphs):
         misfits[i] = np.sqrt(s / n_freq) * 100.0
 
     return misfits, all_apparent_res, all_phases
->>>>>>> e362550 (Final push all files)

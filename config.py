@@ -2,15 +2,9 @@ import numpy as NP
 from function import create_bounds
 
 nr = 10
-<<<<<<< HEAD
-ns = 100
-ni = 100
-iter = 100
-=======
 ns = 150
 ni = 150
 iter = 500
->>>>>>> e362550 (Final push all files)
 
 seed = None
 

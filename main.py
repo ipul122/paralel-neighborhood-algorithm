@@ -39,22 +39,13 @@ while True:
 
         else:
             ns = nss 
-<<<<<<< HEAD
-            batch = sampling(ns,
-=======
             batch = sampling_jit(ns,
->>>>>>> e362550 (Final push all files)
                             nd,
                             nr,
                             models,
                             np,
-<<<<<<< HEAD
-                            misfits)                                 
-        
-=======
                             misfits)
                                     
->>>>>>> e362550 (Final push all files)
         models[idx:idx+ns] = batch
         batch = lb + (ub - lb) * batch
 
@@ -92,13 +83,6 @@ while True:
     if repeat.lower() != 'y':
         break  
 
-<<<<<<< HEAD
-
-
-exit()
-
-=======
->>>>>>> e362550 (Final push all files)
 results = NAAppraiser(
     initial_ensemble=models,
     log_ppd= -misfits,
@@ -122,35 +106,3 @@ corner_plot(
     best_model=best_model,
     true_model=true_model,
 )
-
-
-
-
-"""
-import matplotlib.pyplot as plt
-# Hanya p(x|y=1) saja
-plt.figure(figsize=(8, 5))
-
-# Conditional posterior samples p(x|y=1)
-y_hist_edges = NP.histogram_bin_edges(results.samples[:, 1], bins=50, range=(-1, 3))
-best_ind_y = NP.digitize(1, y_hist_edges)
-
-# Filter data di mana y ≈ 1 (dalam satu bin)
-x_given_y = results.samples[
-    (results.samples[:, 1] > y_hist_edges[best_ind_y - 1]) &
-    (results.samples[:, 1] < y_hist_edges[best_ind_y]),
-    0
-]
-
-plt.hist(x_given_y, bins=25, color="steelblue", alpha=0.7, edgecolor='black')
-plt.axvline(1, c="r", ls="--", lw=2, label="x = 1")
-plt.xlabel("Nilai X")
-plt.ylabel("Frekuensi")
-plt.title(f"Histogram")
-plt.legend()
-plt.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.savefig(f"Images/histogram_COBAparameter.png", dpi=150, bbox_inches="tight")
-plt.close()
-
-"""

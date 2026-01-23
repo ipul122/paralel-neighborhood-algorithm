@@ -52,11 +52,7 @@ def plot_all_models(models, a, b, ResReal, ThkReal, n=4, save_path="model.png", 
     if max_val > 0:
         density /= max_val
 
-<<<<<<< HEAD
-    fig, ax = plt.subplots(figsize=(6, 8), dpi=100)
-=======
     fig, ax = plt.subplots(figsize=(6, 10), dpi=100)
->>>>>>> e362550 (Final push all files)
     
     im = ax.pcolormesh(res_grid, z_grid, density, 
                        shading='auto', cmap='viridis')
@@ -126,24 +122,12 @@ def plot_obs(
     EsembleRes, EsemblePhs,
     save_path="curve.png"
 ):
-<<<<<<< HEAD
-    """
-    Density-based MT data ensemble plot (NA-style)
-    """
-=======
  
->>>>>>> e362550 (Final push all files)
 
     EsembleRes, EsemblePhs = NP.atleast_2d(EsembleRes), NP.atleast_2d(EsemblePhs)
     res_best = NP.squeeze(res_best)
     phs_best = NP.squeeze(phs_best)
-<<<<<<< HEAD
-    # =========================
-    # Grid definition
-    # =========================
-=======
   
->>>>>>> e362550 (Final push all files)
     period = 1.0 / frequencies
 
     nP = len(period)
@@ -156,48 +140,25 @@ def plot_obs(
     density_res = NP.zeros((nP-1, nRes-1), dtype=NP.float32)
     density_phs = NP.zeros((nP-1, nPhs-1), dtype=NP.float32)
 
-<<<<<<< HEAD
-    # =========================
-    # Accumulate density
-    # =========================
     for i in range(EsembleRes.shape[0]):
 
-        # Apparent resistivity
-=======
-    for i in range(EsembleRes.shape[0]):
-
->>>>>>> e362550 (Final push all files)
         j_res = NP.searchsorted(res_grid, EsembleRes[i, :-1]) - 1
         valid = (j_res >= 0) & (j_res < nRes-1)
         rows = NP.where(valid)[0]
         density_res[rows, j_res[valid]] += 1
 
-<<<<<<< HEAD
-        # Phase
-=======
->>>>>>> e362550 (Final push all files)
         j_phs = NP.searchsorted(phs_grid, EsemblePhs[i, :-1]) - 1
         valid = (j_phs >= 0) & (j_phs < nPhs-1)
         rows = NP.where(valid)[0]
         density_phs[rows, j_phs[valid]] += 1
 
-<<<<<<< HEAD
-    # Normalize
-=======
->>>>>>> e362550 (Final push all files)
     if density_res.max() > 0:
         density_res /= density_res.max()
     if density_phs.max() > 0:
         density_phs /= density_phs.max()
 
-<<<<<<< HEAD
-    fig, ax = plt.subplots(1, 2, figsize=(10, 4), dpi=120)
-
-    # Apparent resistivity density
-=======
     fig, ax = plt.subplots(1, 2, figsize=(10, 3.5), dpi=120)
 
->>>>>>> e362550 (Final push all files)
     im0 = ax[0].pcolormesh(
         period,
         res_grid,
@@ -215,10 +176,6 @@ def plot_obs(
     ax[0].set_ylim(1e-0, 1e4)
     ax[0].legend(fontsize=8)
 
-<<<<<<< HEAD
-    # Phase density
-=======
->>>>>>> e362550 (Final push all files)
     im1 = ax[1].pcolormesh(
         period,
         phs_grid,
@@ -272,11 +229,7 @@ def corner_plot(
     best_model=None,
     true_model=None,
     bins=20,
-<<<<<<< HEAD
-    alpha_scatter=0.3,
-=======
     alpha_scatter=0.2,
->>>>>>> e362550 (Final push all files)
 ):
     n_param = samples.shape[1]
 
@@ -291,11 +244,7 @@ def corner_plot(
             [f"RES_{i+1}" for i in range(n_res)] +
             [f"THK_{i+1}" for i in range(n_thk)]
         )
-<<<<<<< HEAD
-        title = f"MT 1D Inversion ({n_param} Parameter)"
-=======
         title = f"MT 1D Inversion ({n_param//2+1} Layer)"
->>>>>>> e362550 (Final push all files)
 
   
     
@@ -309,10 +258,6 @@ def corner_plot(
         for j in range(n_param):
             ax = axes[i, j]
 
-<<<<<<< HEAD
-            # Upper triangle
-=======
->>>>>>> e362550 (Final push all files)
             if j > i:
                 ax.axis("off")
                 continue
