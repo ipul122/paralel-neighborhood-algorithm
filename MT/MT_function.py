@@ -84,8 +84,8 @@ import numpy as np
 from numba import njit, prange
 
 @njit(parallel=True, fastmath=True)
-def forward(model, frequencies, Obsres, Obsphs):
-
+def forward(model, frequencies, Obsres, Obsphs,noise_level=0):
+    noise_level = noise_level / 100.0 
     mu = 4 * np.pi * 1e-7
 
     n_models = model.shape[0]
@@ -123,9 +123,13 @@ def forward(model, frequencies, Obsres, Obsphs):
                 rj = (wj - Z[j+1]) / (wj + Z[j+1])
                 Z[j] = wj * (1 - rj * ej) / (1 + rj * ej)
 
-            Z0 = Z[0]
-            rhoa = (np.abs(Z0)**2) / (mu * w)
-            phase = np.atan2(Z0.imag, Z0.real)
+            Z0_pure = Z[0]
+            
+            zre_noisy = Z0_pure.real + (Z0_pure.real * noise_level * np.random.randn())
+            zim_noisy = Z0_pure.imag + (Z0_pure.imag * noise_level * np.random.randn())
+            
+            rhoa = ( (zre_noisy**2 + zim_noisy**2) ) / (mu * w)
+            phase = np.atan2(zim_noisy, zre_noisy)
 
             all_apparent_res[i, k] = rhoa
             all_phases[i, k] = phase * 180.0 / np.pi

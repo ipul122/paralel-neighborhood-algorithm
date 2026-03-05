@@ -1,11 +1,10 @@
 import numpy as NP
 from function import rosenbrock, plot_all_models, plot_rosenbrock, plot_obs, corner_plot
-from NA.Search import sampling, dim_models, generate_random_models
 from config import nr, ns, ni, iter, type_banchmark
 from MT.MT_function import forward
 from tqdm import tqdm
 from NA.Appraise import NAAppraiser
-from NA.SEARCH_COBA import sampling_jit
+from NA.SEARCH import sampling_jit,dim_models, generate_random_models
 
 
 nss= ns
@@ -65,7 +64,7 @@ while True:
 
     if type == 1:
         plot_rosenbrock(models, best_model, background, background_misfits, save_path=f"Images/rosenbrock.png")
-
+    
     else: 
         Resis = best_model[:n]  
         Thick = best_model[n:]
@@ -73,22 +72,26 @@ while True:
         plot_obs(frequencies, Obsres, Obsphs, res, phs, ERes, EPhs,save_path=f"Images/curve_{n}layer.png")
         plot_all_models(models,Resis,Thick,ResReal,ThkReal,n,save_path=f"Images/model_{n}layer.png", depthmax=maxdepth)
 
-
-
-    """if  misfits[best_idx]< 9:
-        break"""
-
     repeat = input("Repeat program? (y/n): ")
-    
+
     if repeat.lower() != 'y':
         break  
 
+
+
+filter = NP.linspace(0, len(misfits) - 1, int(len(misfits)*0.5), dtype=int)
+
+models_filter  = models[filter]
+misfits_filter = misfits[filter]
+
+
+
 results = NAAppraiser(
-    initial_ensemble=models,
-    log_ppd= -misfits,
+    initial_ensemble=models_filter,
+    log_ppd= -misfits_filter,
     bounds = tuple(zip(lb, ub)),
     n_resample=10000,
-    n_walkers=8
+    n_walkers=10
 )
 
 results.run()
@@ -96,7 +99,13 @@ results.run()
 
 if type ==1 :
     true_model = NP.array([1,1])
-else : true_model = NP.hstack((ResReal, ThkReal))
+
+else :
+     
+    if ResReal[0] == 0 :
+        true_model = None
+    else :
+        true_model = NP.hstack((ResReal, ThkReal))
 
 
 corner_plot(

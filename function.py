@@ -1,7 +1,7 @@
 import numpy as NP
 import matplotlib
 import matplotlib.pyplot as plt
-import math
+from matplotlib import gridspec
 matplotlib.use("Agg")
 from scipy.spatial import Voronoi, voronoi_plot_2d
 
@@ -59,11 +59,11 @@ def plot_all_models(models, a, b, ResReal, ThkReal, n=4, save_path="model.png", 
     
     res_ref, z_ref = build_profile(ResReal, ThkReal)
     ax.step(res_ref, z_ref, where="post", 
-            linewidth=2.5, color="black", label="Synthetic")
+            linewidth=3.5, color="black", label="Synthetic")
     
     res_best, z_best = build_profile(a, b)
     ax.step(res_best, z_best, where="post", 
-            linewidth=2.5, linestyle="--", color="red", label="Best")
+            linewidth=3.5, linestyle="--", color="red", label="Best")
    
     ax.set_xscale("log")
     ax.set_xlim(1, 10000)
@@ -157,58 +157,33 @@ def plot_obs(
     if density_phs.max() > 0:
         density_phs /= density_phs.max()
 
-    fig, ax = plt.subplots(1, 2, figsize=(10, 3.5), dpi=120)
+    fig = plt.figure(figsize=(8, 10), dpi=120)
+    gs = gridspec.GridSpec(2, 1, height_ratios=[4, 2])
 
-    im0 = ax[0].pcolormesh(
-        period,
-        res_grid,
-        density_res.T,
-        shading="auto",
-        cmap="viridis"
-    )
+    ax0 = fig.add_subplot(gs[0]) 
+    ax1 = fig.add_subplot(gs[1]) 
 
-    ax[0].loglog(period, res_best, "r-", linewidth=1.5, label="Best")
-    ax[0].loglog(period, Obsres, "ko", markersize=4, label="Observed")
+    im0 = ax0.pcolormesh(period, res_grid, density_res.T, shading="auto", cmap="viridis")
+    ax0.loglog(period, res_best, "r-", linewidth=4, label="Best")
+    ax0.loglog(period, Obsres, "ko", markersize=10, label="Observed")
+    ax0.set_ylabel("Apparent Resistivity (Ohm.m)")
+    ax0.set_title("Apparent Resistivity")
+    ax0.set_ylim(1e-0, 1e4)
+    ax0.legend(fontsize=8)
 
-    ax[0].set_xlabel("Period (s)")
-    ax[0].set_ylabel("Apparent Resistivity (Ohm.m)")
-    ax[0].set_title("Apparent Resistivity")
-    ax[0].set_ylim(1e-0, 1e4)
-    ax[0].legend(fontsize=8)
-
-    im1 = ax[1].pcolormesh(
-        period,
-        phs_grid,
-        density_phs.T,
-        shading="auto",
-        cmap="viridis"
-    )
-
-    ax[1].loglog(period, phs_best, "r-", linewidth=1.5, label="Best")
-    ax[1].loglog(period, Obsphs, "ko", markersize=4, label="Observed")
-
-    ax[1].set_xlabel("Period (s)")
-    ax[1].set_ylabel("Phase (deg)")
-    ax[1].set_title("Phase")
-    ax[1].set_ylim(1e-0, 1e2)
-    ax[1].legend(fontsize=8)
+    im1 = ax1.pcolormesh(period, phs_grid, density_phs.T, shading="auto", cmap="viridis")
+    ax1.semilogx(period, phs_best, "r-", linewidth=4)
+    ax1.semilogx(period, Obsphs, "ko", markersize=10)
+    ax1.set_xlabel("Period (s)")
+    ax1.set_ylabel("Phase (deg)")
+    ax1.set_ylim(0, 90)
 
     plt.tight_layout()
-
-    fig.savefig(
-        save_path,
-        dpi=150,
-        bbox_inches="tight",
-        facecolor="white"
-    )
-
+    fig.savefig(save_path, dpi=150, bbox_inches="tight", facecolor="white")
     plt.close(fig)
-    return save_path
 
 
-
-
-def create_bounds(nlayer, rho_min=1, rho_max=2000, thk_min=1, thk_max=1000):
+def create_bounds(nlayer, rho_min=1, rho_max=2000, thk_min=1, thk_max=1100):
   
     lb_res = NP.full(nlayer, rho_min)
     ub_res = NP.full(nlayer, rho_max)
@@ -228,7 +203,7 @@ def corner_plot(
     mean=None,
     best_model=None,
     true_model=None,
-    bins=20,
+    bins=100,
     alpha_scatter=0.2,
 ):
     n_param = samples.shape[1]
@@ -237,6 +212,7 @@ def corner_plot(
     if type == 1:
         param_names = ["x", "y"]
         title = "Rosenbrock Function Parameter"
+        bins = 20
     else:
         n_thk = n_param // 2
         n_res = n_param - n_thk
@@ -264,24 +240,42 @@ def corner_plot(
 
            
             if i == j:
+                orientation = "vertical"
+                if j==1 & type == 1:
+                    orientation = "horizontal"
+                    
                 ax.hist(
                     samples[:, i],
                     bins=bins,
                     histtype="step",
-                    color="black"
+                    color="black",
+                    orientation=orientation
                 )
 
-                if true_model is not None:
-                    ax.axvline(true_model[i], c="g", lw=2, label="True")
+                if j==1 & type == 1:
+                    if true_model is not None:
+                        ax.axhline(true_model[i], c="g", lw=3, label="True")
 
-                if best_model is not None:
-                    ax.axvline(best_model[i], c="r", ls="--", lw=2, label="Best")
+                    if best_model is not None:
+                        ax.axhline(best_model[i], c="r", ls="--", lw=2, label="Best")
 
-                if mean is not None:
-                    ax.axvline(mean[i], c="b", ls="--", lw=2, label="Mean")
+                    if mean is not None:
+                        ax.axhline(mean[i], c="b", ls=":", lw=2, label="Mean")
 
-                if i == 0:
-                    ax.legend(fontsize=8)
+                    if i == 0:
+                        ax.legend(fontsize=8)
+                else :
+                    if true_model is not None:
+                        ax.axvline(true_model[i], c="g", lw=3, label="True")
+
+                    if best_model is not None:
+                        ax.axvline(best_model[i], c="r", ls="--", lw=2, label="Best")
+
+                    if mean is not None:
+                        ax.axvline(mean[i], c="b", ls=":", lw=2, label="Mean")
+
+                    if i == 0:
+                        ax.legend(fontsize=8)
 
           
             else:
@@ -335,6 +329,7 @@ def corner_plot(
                 ax.set_yticks([])
 
     plt.suptitle(title, fontsize=14, fontweight="bold")
+    plt.tight_layout()
     plt.subplots_adjust(hspace=0.05, wspace=0.05)
     plt.savefig(f"Images/{title}.png", dpi=150, bbox_inches="tight")
     plt.close()

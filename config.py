@@ -3,8 +3,9 @@ from function import create_bounds
 
 nr = 10
 ns = 150
+
 ni = 150
-iter = 500
+iter = 550
 
 seed = None
 

@@ -13,7 +13,6 @@ def run_appraisal(
     log_ppd: NDArray,
     bounds: Tuple[Tuple[float, float], ...],
     n_walkers: int = 1,
-    start_fraction: float = 0.5,
     save: bool = True,
     verbose: bool = True,
     seed: int | None = None,
@@ -22,7 +21,6 @@ def run_appraisal(
     lower = np.array([b[0] for b in bounds])
     upper = np.array([b[1] for b in bounds])
     Cm = 1.0 / (upper - lower) ** 2
-
     Ne = len(initial_ensemble)
     nr = n_resample // max(1, n_walkers)
 
@@ -32,8 +30,7 @@ def run_appraisal(
     accumulator = MCIntegrals(nd, save)
 
     for x in random_walk(
-        rng, nr, start, initial_ensemble, log_ppd, lower, upper, Cm, verbose
-    ):
+        rng, nr, start, initial_ensemble, log_ppd, lower, upper, Cm, verbose):
         accumulator.accumulate(x)
 
     results = {
