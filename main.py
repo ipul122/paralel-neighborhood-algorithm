@@ -4,7 +4,7 @@ from config import nr, ns, ni, iter, type_banchmark
 from MT.MT_function import forward
 from tqdm import tqdm
 from NA.Appraise import NAAppraiser
-from NA.SEARCH import sampling_jit,dim_models, generate_random_models
+from NA.Search import sampling_jit,dim_models, generate_random_models
 
 
 nss= ns
