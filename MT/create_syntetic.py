@@ -2,7 +2,7 @@ import numpy as NP
 from MT_function import forward
 
 Model = NP.array([
-    	  200,	  10,	1000,	 300,	 600
+     1000,	 1000,   1000,	1000,	 1000
 
     ]).reshape(1, -1)
 

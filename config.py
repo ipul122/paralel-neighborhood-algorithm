@@ -4,8 +4,8 @@ from function import create_bounds
 nr = 10
 ns = 150
 
-ni = 150
-iter = 550
+ni = 1500
+iter = 500
 
 seed = None
 
@@ -39,7 +39,7 @@ def type_banchmark(type_input=1):
             layer = int(input(" custom layer 3-10..? "))
             
             if layer in [3, 4, 5, 6, 7, 8, 9, 10]:
-                data = NP.loadtxt(f'./MT/CUSTOM.txt', skiprows=1)
+                data = NP.loadtxt(f'./MT/CUSTOM_NA.txt', skiprows=1)
                 frequencies, Obsres, Obsphs = data[:, 0], data[:, 1], data[:, 2]
 
                 lb, ub = create_bounds(layer)

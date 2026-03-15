@@ -11,7 +11,6 @@ def generate_random_models(n, nd):
     return random_generator.random_sample((n, nd))
 
 def get_bests_indices(nr, misfits, np_current):
-    """Mengambil indeks asli dari model-model terbaik."""
     return NP.argsort(misfits[:np_current])[:nr]
 
 def sampling(ns, nd, nr, models, np_current, misfits):
