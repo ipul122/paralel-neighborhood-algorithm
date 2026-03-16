@@ -3,7 +3,6 @@ from numba import njit, prange
 from config import seed
 
 
-# Inisialisasi generator acak
 random_generator = np.random.RandomState(seed)
 
 def dim_models(lower_bounds, upper_bounds, models):
@@ -12,79 +11,89 @@ def dim_models(lower_bounds, upper_bounds, models):
 def generate_random_models(n, nd):
     return random_generator.random_sample((n, nd))
 
+
 @njit(parallel=True, fastmath=True)
 def sampling_jit(ns, nd, nr, models, np_current, misfits):
     new_models = np.zeros((ns, nd))
     
-    # 1. Ambil indeks model terbaik (sorting di Numba)
+    # 1. Identifikasi model-model terbaik
     m = models[:np_current]
     best_indices = np.argsort(misfits[:np_current])[:nr]
     
-    # Pre-calculating walk_length untuk tiap best_indices
-    # Agar bisa dijalankan dalam prange (paralel)
+    # Distribusi jumlah langkah per sel
     walk_lengths = np.full(nr, ns // nr, dtype=np.int32)
-    walk_lengths[0] += ns % nr # Sisa pembagian diberikan ke peringkat 1
+    walk_lengths[0] += ns % nr 
     
-    # Tentukan offset indeks untuk menyimpan hasil di new_models
     offsets = np.zeros(nr, dtype=np.int32)
     for i in range(1, nr):
         offsets[i] = offsets[i-1] + walk_lengths[i-1]
 
-    # 2. Parallel loop untuk setiap sel model terbaik
+    # 2. Paralelisasi antar sel Voronoi
     for r in prange(nr):
         k = best_indices[r]
-        vk = m[k]
+        vk = m[k] # Titik pusat model referensi k
         current_walk_len = walk_lengths[r]
         current_offset = offsets[r]
         
+        # --- INISIALISASI GIBBS SAMPLER (Sesuai Paper) ---
+        xA = vk.copy() # Start walk dari pusat sel
+        
+        # Hitung Jarak Penuh Euclidean sebagai basis awal
+        d2_full = np.zeros(np_current)
+        for j in range(np_current):
+            dist_sq = 0.0
+            for d in range(nd):
+                diff = m[j, d] - xA[d]
+                dist_sq += diff * diff
+            d2_full[j] = dist_sq
+        
         for step in range(current_walk_len):
-            xA = vk.copy()
-            
-            # Hitung d2 awal: jarak xA ke semua model m
-            d2 = np.zeros(np_current)
-            for j in range(np_current):
-                dist_sq = 0.0
-                for d in range(nd):
-                    diff = m[j, d] - xA[d]
-                    dist_sq += diff * diff
-                d2[j] = dist_sq
-            
-            # Acak urutan sumbu
+            # Sambridge menyarankan urutan sumbu diacak (Permutation)
             axes = np.random.permutation(nd)
             
             for i in axes:
-                # dk2 adalah jarak model referensi k terhadap sumbu i
-                dk2 = d2[k]
+                vki = vk[i]
+                vji = m[:, i]
                 
+                # --- LOGIKA JARAK TEGAK LURUS (Eq 18 Paper) ---
+                # d_perp^2 = d_full^2 - d_sumbu_saat_ini^2
+                # Ini memastikan kita membuang komponen sumbu-i
+                d2_perp = np.zeros(np_current)
+                for j in range(np_current):
+                    d2_perp[j] = d2_full[j] - (m[j, i] - xA[i])**2
+                
+                dk2_perp = d2_perp[k] 
+                
+                # --- RUMUS SAMBRIDGE ASLI (Eq 19 Paper) ---
+                # xji = 0.5 * [ vki + vji + (dk_perp^2 - dj_perp^2) / (vki - vji) ]
                 li = 0.0
                 ui = 1.0
                 
-                # Cari batas Voronoi (Persamaan 9, 10, 11)
                 for j in range(np_current):
-                    denominator = vk[i] - m[j, i]
+                    denominator = vki - vji[j]
                     
                     if denominator != 0.0:
-                        numerator = dk2 - d2[j]
-                        xji = 0.5 * (vk[i] + m[j, i] + (numerator / denominator))
+                        numerator = dk2_perp - d2_perp[j]
+                        xji = 0.5 * (vki + vji[j] + (numerator / denominator))
                         
-                        # Update li dan ui
+                        # --- UPDATE BATAS (Eq 20 & 21 Paper) ---
                         if xji < xA[i]:
                             if xji > li: li = xji
                         elif xji > xA[i]:
                             if xji < ui: ui = xji
                 
-                # Ambil posisi baru
+                # Update posisi xA (Random Move)
                 xA_old_i = xA[i]
                 xA[i] = li + (ui - li) * np.random.random()
                 
-                # 5. Update d2 secara rekursif (Persamaan 12)
-                # Linear cost O(np_current)
+                # --- RECURSIVE DISTANCE UPDATE (Eq 24 Paper) ---
+                # Agar d2_full tetap sinkron untuk sumbu berikutnya
                 for j in range(np_current):
                     old_diff = m[j, i] - xA_old_i
                     new_diff = m[j, i] - xA[i]
-                    d2[j] = d2[j] - (old_diff * old_diff) + (new_diff * new_diff)
+                    d2_full[j] = d2_full[j] - (old_diff**2) + (new_diff**2)
             
-            # Simpan hasil ke array output
-            new_models[current_offset + step] = xA
+            # Simpan hasil koordinat xA yang sudah berkelana
+            new_models[current_offset + step] = xA.copy()
             
     return new_models
