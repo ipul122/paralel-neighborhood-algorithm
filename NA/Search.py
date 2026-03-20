@@ -16,11 +16,9 @@ def generate_random_models(n, nd):
 def sampling_jit(ns, nd, nr, models, np_current, misfits):
     new_models = np.zeros((ns, nd))
     
-    # 1. Identifikasi model-model terbaik
     m = models[:np_current]
     best_indices = np.argsort(misfits[:np_current])[:nr]
     
-    # Distribusi jumlah langkah per sel
     walk_lengths = np.full(nr, ns // nr, dtype=np.int32)
     walk_lengths[0] += ns % nr 
     
@@ -28,17 +26,15 @@ def sampling_jit(ns, nd, nr, models, np_current, misfits):
     for i in range(1, nr):
         offsets[i] = offsets[i-1] + walk_lengths[i-1]
 
-    # 2. Paralelisasi antar sel Voronoi
     for r in prange(nr):
         k = best_indices[r]
-        vk = m[k] # Titik pusat model referensi k
+        vk = m[k] 
         current_walk_len = walk_lengths[r]
         current_offset = offsets[r]
         
-        # --- INISIALISASI GIBBS SAMPLER (Sesuai Paper) ---
-        xA = vk.copy() # Start walk dari pusat sel
+        xA = vk.copy() 
         
-        # Hitung Jarak Penuh Euclidean sebagai basis awal
+        
         d2_full = np.zeros(np_current)
         for j in range(np_current):
             dist_sq = 0.0
@@ -48,24 +44,18 @@ def sampling_jit(ns, nd, nr, models, np_current, misfits):
             d2_full[j] = dist_sq
         
         for step in range(current_walk_len):
-            # Sambridge menyarankan urutan sumbu diacak (Permutation)
-            axes = np.random.permutation(nd)
-            
-            for i in axes:
+
+            for i in range(nd):
                 vki = vk[i]
                 vji = m[:, i]
-                
-                # --- LOGIKA JARAK TEGAK LURUS (Eq 18 Paper) ---
-                # d_perp^2 = d_full^2 - d_sumbu_saat_ini^2
-                # Ini memastikan kita membuang komponen sumbu-i
+
+                # ---  (Eq 18 Paper) ---
                 d2_perp = np.zeros(np_current)
                 for j in range(np_current):
                     d2_perp[j] = d2_full[j] - (m[j, i] - xA[i])**2
                 
                 dk2_perp = d2_perp[k] 
                 
-                # --- RUMUS SAMBRIDGE ASLI (Eq 19 Paper) ---
-                # xji = 0.5 * [ vki + vji + (dk_perp^2 - dj_perp^2) / (vki - vji) ]
                 li = 0.0
                 ui = 1.0
                 
@@ -74,26 +64,24 @@ def sampling_jit(ns, nd, nr, models, np_current, misfits):
                     
                     if denominator != 0.0:
                         numerator = dk2_perp - d2_perp[j]
+                        # ---  (Eq 19 Paper) ---
                         xji = 0.5 * (vki + vji[j] + (numerator / denominator))
                         
-                        # --- UPDATE BATAS (Eq 20 & 21 Paper) ---
+                        # ---  (Eq 20 & 21 Paper) ---
                         if xji < xA[i]:
                             if xji > li: li = xji
                         elif xji > xA[i]:
                             if xji < ui: ui = xji
                 
-                # Update posisi xA (Random Move)
                 xA_old_i = xA[i]
                 xA[i] = li + (ui - li) * np.random.random()
                 
-                # --- RECURSIVE DISTANCE UPDATE (Eq 24 Paper) ---
-                # Agar d2_full tetap sinkron untuk sumbu berikutnya
+                # --- RECURSIVE DISTANCE UPDATE 
                 for j in range(np_current):
                     old_diff = m[j, i] - xA_old_i
                     new_diff = m[j, i] - xA[i]
                     d2_full[j] = d2_full[j] - (old_diff**2) + (new_diff**2)
             
-            # Simpan hasil koordinat xA yang sudah berkelana
             new_models[current_offset + step] = xA.copy()
             
     return new_models
