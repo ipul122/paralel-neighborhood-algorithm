@@ -115,3 +115,8 @@ corner_plot(
     best_model=best_model,
     true_model=true_model,
 )
+
+print("mean", results.mean)
+print("smple mean err", results.sample_mean_error)
+print("cov", results.covariance)
+print("sample cov err", results.sample_covariance_error)

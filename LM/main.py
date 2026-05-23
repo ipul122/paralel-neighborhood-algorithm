@@ -112,8 +112,8 @@ plt.plot(x, Mfit, label='Trend Misfit', zorder=1)
 plt.scatter(x, Mfit, color="r", s=20, label='Data Poin', zorder=2)
 
 plt.xlabel('Iterasi')
-plt.ylabel('Misfit (RMS)')
-plt.title('Grafik Konvergensi: Misfit vs Iterasi')
+plt.ylabel('Misfit')
+plt.title('LM: Misfit vs Iterasi')
 plt.grid(True, linestyle='--', alpha=0.6)
 plt.legend()
 plt.show()
@@ -167,7 +167,7 @@ ax1.loglog(periods, apparent_resistivities,
 
 ax1.loglog(periods, fapparent_resistivities,
            'r-', linewidth=3, label='Best Fit')
-
+ax1.set_ylim(1e1, 1e3)
 ax1.set_xlabel("Period (s)")
 ax1.set_ylabel("Apparent Resistivity (Ω·m)")
 ax1.set_title("Apparent Resistivity")
