@@ -5,7 +5,7 @@ nr = 10
 ns = 150
 
 ni = 1500
-iter = 500
+iter = 100
 
 seed = None
 

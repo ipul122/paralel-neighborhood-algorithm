@@ -1,0 +1,9 @@
+debug.ipynb
+belajar.ipynb
+.ipynb_checkpoints/
+Search_Ori.py
+appraisal_coba.py
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

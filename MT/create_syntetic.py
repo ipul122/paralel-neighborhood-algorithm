@@ -86,5 +86,5 @@ ax1.set_ylabel("Phase (deg)")
 ax1.set_ylim(0, 90)
 
 plt.tight_layout()
-fig.savefig("MT/anu.png", dpi=150, bbox_inches="tight", facecolor="white")
+fig.savefig("MT/kurvaSintetik.png", dpi=150, bbox_inches="tight", facecolor="white")
 plt.close(fig)

@@ -75,11 +75,12 @@ while True:
     repeat = input("Repeat program? (y/n): ")
 
     if repeat.lower() != 'y':
+        print()
         break  
 
+downsampling = min(int(input("Use n Ensemble 1-100% : ")), 100)
 
-
-filter = NP.linspace(0, len(misfits) - 1, int(len(misfits)*0.5), dtype=int)
+filter = NP.linspace(0, len(misfits) - 1, int(len(misfits)*(downsampling/100)), dtype=int)
 
 models_filter  = models[filter]
 misfits_filter = misfits[filter]
