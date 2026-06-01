@@ -1,4 +1,5 @@
 # Neighbourhood Algorithm – (Python)
+<img src="Images/mt_1d_inversion_5layer.png" width="700">
 
 This repository contains a Python implementation of Neighbourhood Algorithm (NA), adapted from:
 
