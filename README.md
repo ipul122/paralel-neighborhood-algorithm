@@ -1,10 +1,12 @@
 # Neighbourhood Algorithm – (Python)
-![MT 1D Inversion](Images/mt_1d_inversion_5layer.png)
+<p align="center">
+  <img src="Images/curve_5layer.png" width="345">
+  <img src="Images/model_5layer.png" width="300">
+</p>
 
-![Model](Images/model_5layer.png)
-
-![Curve](Images/curve_5layer.png)
-
+<p align="center">
+  <img src="Images/MT 1D Inversion (5 Layer).png" width="650">
+</p>
 This repository contains a Python implementation of Neighbourhood Algorithm (NA), adapted from:
 
 https://github.com/auggiemarignier/neighpy/blob/main/neighpy
