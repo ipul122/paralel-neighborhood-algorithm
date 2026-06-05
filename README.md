@@ -58,3 +58,17 @@ The columns must strictly follow this order:
 2. Go back to the main repository directory:
    ```bash
    cd ..
+
+### Config Settings  
+1. Open and edit the field data file using nano:
+   ```bash
+   nano config.txt
+
+2. set Param:
+   ```ini
+   [SETTINGS]
+   nr = 10
+   ns = 150
+   ni = 1500
+   iter = 100
+   seed = None

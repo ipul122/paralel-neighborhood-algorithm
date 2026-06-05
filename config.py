@@ -1,15 +1,18 @@
 import numpy as NP
+import configparser
 from function import create_bounds
 
-nr = 10
-ns = 150
 
-ni = 1500
-iter = 100
+config = configparser.ConfigParser()
+config.read('config.txt')
 
-seed = None
+nr   = int(config['SETTINGS']['nr'])
+ns   = int(config['SETTINGS']['ns'])
+ni   = int(config['SETTINGS']['ni'])
+iter = int(config['SETTINGS']['iter'])
 
-
+raw_seed = config['SETTINGS']['seed']
+seed = None if raw_seed == "None" else int(raw_seed)
 
 
 def type_banchmark(type_input=1):
