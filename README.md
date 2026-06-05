@@ -4,29 +4,29 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 <p align="center">
-  <img src="Images/curve_5layer.png" width="345">
-  <img src="Images/model_5layer.png" width="300">
+  <img src="Images/curve_5layer.png" width="245">
+  <img src="Images/model_5layer.png" width="215">
 </p>
 
 <p align="center">
-  <img src="Images/MT 1D Inversion (5 Layer).png" width="650">
+  <img src="Images/MT 1D Inversion (5 Layer).png" width="500">
 </p>
 
 This repository contains a high-performance Python implementation of the *Neighborhood Algorithm* (Sambridge, 1999). It is optimized using multi-core parallelization (`joblib`) and Just-In-Time compilation (`Numba JIT`) for 1D Magnetotelluric (MT) data inversion and uncertainty quantification.
 
 Core algorithm framework adapted from: `https://github.com/auggiemarignier/neighpy`
 
-## 🚀 Key Features
+##  Key Features ⏳
 
 - **Fast Search Stage (Numba JIT):** Accelerates the MT forward modeling function using the `@njit(parallel=True, fastmath=True)` decorator for high-speed machine compilation.
 - **Multi-Core Walkers:** Distributes the random walk sampling computation across all logical CPU processors using the `joblib` parallel architecture.
 
-## 📦 System Requirements & Installation
+##  System Requirements & Installation 💻
 
 ### Prerequisites
 - Python 3.9 or Python 3.10
 
-### Installation Steps
+### Installation Steps 
 
 1. Clone this repository to your local machine:
    ```bash
@@ -43,10 +43,18 @@ Core algorithm framework adapted from: `https://github.com/auggiemarignier/neigh
    cd LM
    python main.py
    
-### Field Data File Setup
+## Field Data File Setup 💾
 Before running the inversion, you must format your observed field data and save it as `MT/ {CUSTOM_NA.txt or CUSTOM_LM.txt}`. The file must use a tab-separated (`\t`) delimiter and contain a header row. 
 
 The columns must strictly follow this order:
-1. **Frequency** (in Hz)
-2. **Apparent Resistivity** (in $\Omega\cdot\text{m}$)
-3. **Phase** (in degrees)
+  **Frequency** (in Hz), 
+  **Apparent Resistivity** (in $\Omega\cdot\text{m}$), 
+  **Phase** (in degrees), 
+
+1. Open and edit the field data file using nano:
+   ```bash
+   nano CUSTOM_LM.txt
+
+2. Go back to the main repository directory:
+   ```bash
+   cd ..
