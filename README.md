@@ -30,7 +30,7 @@ Core algorithm framework adapted from: `https://github.com/auggiemarignier/neigh
 
 1. Clone this repository to your local machine:
    ```bash
-   git clone https://github.com/ipul122/paralel-neighborhood-algorithm.git](https://github.com/ipul122/paralel-neighborhood-algorithm.git
+   git clone https://github.com/ipul122/paralel-neighborhood-algorithm.git
    cd paralel-neighborhood-algorithm
 2. Install all required dependencies via the requirements.txt file:
    ```bash
