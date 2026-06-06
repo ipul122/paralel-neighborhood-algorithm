@@ -43,7 +43,7 @@ def calculate_mt_response(model, frequencies):
 
 
 data = np.genfromtxt(
-    "MT\CUSTOM_LM.txt",
+    "../MT/CUSTOM_NA.txt",
     delimiter="\t",
     skip_header=1
 )
