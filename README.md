@@ -65,20 +65,12 @@ Type your desired inversion input and press Enter. The script will save the form
 If you prefer manual setup, create a tab-separated (\t) text file named CUSTOM_NA.txt (for Neighborhood Algorithm) or CUSTOM_LM.txt (for Levenberg-Marquardt) inside the MT/ directory.
 
 The text structure must omit the default numpy comment character (#) on the header and strictly follow this 3-column setup:
-
-Plaintext
-Frequency(Hz_sitename)	AppRes(Ohm.m)	Phase(deg)
-100.00000000        	150.23456789 	45.12345678
-50.00000000         	145.65432101 	46.78901234
-... [sequential frequencies from high to low]
-
-
-
-
-
-
-
-
+  ```ini
+  Frequency(Hz_sitename)	AppRes(Ohm.m)	Phase(deg)
+  100.00000000        	150.23456789 	45.12345678
+  50.00000000         	145.65432101 	46.78901234
+  ... [sequential frequencies from high to low]
+  ```
 ## Config Settings  
 1. Open and edit the field data file using nano:
    ```bash
