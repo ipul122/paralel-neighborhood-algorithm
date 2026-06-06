@@ -2,7 +2,8 @@
 nr = 10
 ns = 150
 ni = 1500
-iter = 100
+iter = 200
 seed = None 
 
 # to apply random_default seed plz use object rng and do not use numba for debug
+
