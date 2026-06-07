@@ -44,22 +44,34 @@ Core algorithm framework adapted from: `https://github.com/auggiemarignier/neigh
    python main.py
    
 ## Field Data File Setup 💾
-Before running the inversion, you must format your observed field data and save it as `MT/ {CUSTOM_NA.txt or CUSTOM_LM.txt}`. The file must use a tab-separated (`\t`) delimiter and contain a header row. 
 
-The columns must strictly follow this order:
-  **Frequency** (in Hz), 
-  **Apparent Resistivity** (in $\Omega\cdot\text{m}$), 
-  **Phase** (in degrees), 
 
-1. Open and edit the field data file using nano:
+Before running the inversion algorithms, you must supply your observed field data. You can automatically parse standard industry .edi files or set up the text file manually.
+
+### Option A: Automatic Extraction via Drag & Drop (Recommended)
+You can instantly convert raw .edi files into the proper inversion input format using the load_edi.py script located inside the MT/ folder:
+
+1. Navigate to the MT directory:
    ```bash
-   nano CUSTOM_LM.txt
-
-2. Go back to the main repository directory:
+   cd MT
+2. Call the script and drag & drop your target .edi file directly from Windows Explorer into your terminal window before pressing Enter:
    ```bash
-   cd ..
+   python load_edi.py <drag_and_drop_your_edi_file_here>
+The interactive CLI will read the data and prompt you: Masukkan nama file output (...).
 
-### Config Settings  
+Type your desired inversion input and press Enter. The script will save the formatted data and generate a matplotlib pop-up window of the Invariant curves.
+
+### Option B: Manual Text File Setup
+If you prefer manual setup, create a tab-separated (\t) text file named CUSTOM_NA.txt (for Neighborhood Algorithm) or CUSTOM_LM.txt (for Levenberg-Marquardt) inside the MT/ directory.
+
+The text structure must omit the default numpy comment character (#) on the header and strictly follow this 3-column setup:
+  ```ini
+  Frequency(Hz_sitename)	AppRes(Ohm.m)	Phase(deg)
+  100.00000000        	150.23456789 	45.12345678
+  50.00000000         	145.65432101 	46.78901234
+  ... [sequential frequencies from high to low]
+  ```
+## Config Settings  
 1. Open and edit the field data file using nano:
    ```bash
    nano config.txt
