@@ -5,3 +5,4 @@ joblib==1.5.2
 numba==0.63.1
 scipy==1.16.2
 mtpy==1.1.5
+pillow==11.3.0

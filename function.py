@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 matplotlib.use("Agg")
 from scipy.spatial import Voronoi, voronoi_plot_2d
+from PIL import Image
 
 
 
@@ -88,6 +89,8 @@ def plot_all_models(models, a, b, ResReal, ThkReal, n=4, save_path="model.png", 
                    facecolor='white', edgecolor='none')
     
     plt.close(fig)  
+    img = Image.open(save_path)
+    img.show()
     return save_path 
 
 def plot_rosenbrock(models, best_model, bg, bg_misfit, save_path="rosenbrock.png"):
@@ -112,6 +115,8 @@ def plot_rosenbrock(models, best_model, bg, bg_misfit, save_path="rosenbrock.png
     plt.xlabel('x'); plt.ylabel('y'); plt.title(f'Rosenbrock Function {len(models)} Model')
     plt.colorbar(sc, label='Misfit'); plt.legend()
     plt.savefig(save_path, dpi=150, bbox_inches="tight")
+    img = Image.open(save_path)
+    img.show()
     plt.close()
 
 
@@ -332,4 +337,6 @@ def corner_plot(
     plt.tight_layout()
     plt.subplots_adjust(hspace=0.05, wspace=0.05)
     plt.savefig(f"Images/{title}.png", dpi=150, bbox_inches="tight")
+    img = Image.open(f"Images/{title}.png")
+    img.show()
     plt.close()
