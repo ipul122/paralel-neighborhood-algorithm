@@ -4,13 +4,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 <p align="center">
-  <img src="Images/curve_5layer.png" width="245">
-  <img src="Images/model_5layer.png" width="215">
+  <img src="Images/rosenbrock.png" width="315">
+  <img src="Images/Rosenbrock Function Parameter.png" width="245">
 </p>
 
-<p align="center">
-  <img src="Images/MT 1D Inversion (5 Layer).png" width="500">
-</p>
 
 This repository contains a high-performance Python implementation of the *Neighborhood Algorithm* (Sambridge, 1999). It is optimized using multi-core parallelization (`joblib`) and Just-In-Time compilation (`Numba JIT`) for 1D Magnetotelluric (MT) data inversion and uncertainty quantification.
 

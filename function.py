@@ -213,7 +213,6 @@ def corner_plot(
 ):
     n_param = samples.shape[1]
 
-  
     if type == 1:
         param_names = ["x", "y"]
         title = "Rosenbrock Function Parameter"
@@ -227,8 +226,6 @@ def corner_plot(
         )
         title = f"MT 1D Inversion ({n_param//2+1} Layer)"
 
-  
-    
     fig, axes = plt.subplots(
         n_param, n_param,
         figsize=(2.5 * n_param, 2.5 * n_param),
@@ -243,10 +240,9 @@ def corner_plot(
                 ax.axis("off")
                 continue
 
-           
             if i == j:
                 orientation = "vertical"
-                if j==1 & type == 1:
+                if j == 1 and type == 1:
                     orientation = "horizontal"
                     
                 ax.hist(
@@ -257,32 +253,25 @@ def corner_plot(
                     orientation=orientation
                 )
 
-                if j==1 & type == 1:
+                if j == 1 and type == 1:
                     if true_model is not None:
                         ax.axhline(true_model[i], c="g", lw=3, label="True")
-
                     if best_model is not None:
                         ax.axhline(best_model[i], c="r", ls="--", lw=2, label="Best")
-
                     if mean is not None:
                         ax.axhline(mean[i], c="b", ls=":", lw=2, label="Mean")
-
                     if i == 0:
                         ax.legend(fontsize=8)
-                else :
+                else:
                     if true_model is not None:
                         ax.axvline(true_model[i], c="g", lw=3, label="True")
-
                     if best_model is not None:
                         ax.axvline(best_model[i], c="r", ls="--", lw=2, label="Best")
-
                     if mean is not None:
                         ax.axvline(mean[i], c="b", ls=":", lw=2, label="Mean")
-
                     if i == 0:
                         ax.legend(fontsize=8)
 
-          
             else:
                 ax.scatter(
                     samples[:, j],
@@ -291,44 +280,25 @@ def corner_plot(
                     alpha=alpha_scatter,
                     color="black"
                 )
-
                 if true_model is not None:
-                    ax.scatter(
-                        true_model[j],
-                        true_model[i],
-                        c="g",
-                        marker="o",
-                        s=80,
-                        zorder=10
-                    )
-
+                    ax.scatter(true_model[j], true_model[i], c="g", marker="o", s=80, zorder=10)
                 if best_model is not None:
-                    ax.scatter(
-                        best_model[j],
-                        best_model[i],
-                        c="r",
-                        marker="+",
-                        s=80,
-                        zorder=10
-                    )
-
+                    ax.scatter(best_model[j], best_model[i], c="r", marker="+", s=80, zorder=10)
                 if mean is not None:
-                    ax.scatter(
-                        mean[j],
-                        mean[i],
-                        c="b",
-                        marker="x",
-                        s=40,
-                        zorder=10
-                    )
+                    ax.scatter(mean[j], mean[i], c="b", marker="x", s=40, zorder=10)
 
-          
+            
             if i == n_param - 1:
                 ax.set_xlabel(param_names[j])
             else:
                 ax.set_xticks([])
 
-            if j == 0:
+            if i == j and type!= 1:
+                ax.yaxis.tick_right()
+                ax.yaxis.set_label_position("right")
+                ax.set_ylabel("Freq", fontsize=8, color="black")
+                ax.tick_params(axis='y', labelsize=8, colors="black")
+            elif j == 0:
                 ax.set_ylabel(param_names[i])
             else:
                 ax.set_yticks([])

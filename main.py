@@ -82,32 +82,39 @@ downsampling = min(int(input("Use n Ensemble 1-100% : ")), 100)
 
 filter = NP.linspace(0, len(misfits) - 1, int(len(misfits)*(downsampling/100)), dtype=int)
 
-models_filter  = models[filter]
+models_filter  = models[filter].copy()
 misfits_filter = misfits[filter]
 
-
+if type != 1:
+    models_filter[:,:n] = NP.log10(models_filter[:,:n]) 
+    
+    lb_log = list(NP.log10(lb[:n])) + list(lb[n:])
+    ub_log = list(NP.log10(ub[:n])) + list(ub[n:])
+    appraisal_bounds = tuple(zip(lb_log, ub_log))
+else:
+    # Jika Rosenbrock, biarkan bounds tetap linier
+    appraisal_bounds = tuple(zip(lb, ub))
 
 results = NAAppraiser(
     initial_ensemble=models_filter,
     log_ppd= -misfits_filter,
-    bounds = tuple(zip(lb, ub)),
+    bounds = appraisal_bounds,
     n_resample=10000,
     n_walkers=10
 )
 
 results.run()
 
-
-if type ==1 :
+if type == 1 :
     true_model = NP.array([1,1])
-
 else :
-     
+    results.samples[:,:n] = 10**(results.samples[:,:n])
+    results.mean[:n] = 10**(results.mean[:n])
+    
     if ResReal[0] == 0 :
         true_model = None
     else :
         true_model = NP.hstack((ResReal, ThkReal))
-
 
 corner_plot(
     type=type,
@@ -116,6 +123,9 @@ corner_plot(
     best_model=best_model,
     true_model=true_model,
 )
+
+if type != 1:
+    plot_all_models(results.samples,Resis,Thick,ResReal,ThkReal,n,save_path=f"Images/model_{n}layer_PosteriorDense.png", depthmax=maxdepth)
 
 print("mean", results.mean)
 print("smple mean err", results.sample_mean_error)

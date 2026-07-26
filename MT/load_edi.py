@@ -1,7 +1,6 @@
 import os
 import sys
 
-# Trik NumPy wajib untuk mtpy versi lama
 import numpy as np
 np.float = float
 np.int = int
@@ -10,7 +9,6 @@ np.complex = complex
 from mtpy.core.mt import MT
 import matplotlib.pyplot as plt
 
-# 1. Memeriksa argumen dari terminal (fitur drag and drop)
 if len(sys.argv) < 2:
     print("\n[ERROR] Format salah! Seret file .edi Anda ke terminal.")
     print("Contoh penggunaan: python load_edi.py <drag_file_ke_sini>\n")
@@ -23,7 +21,6 @@ if not os.path.exists(file_path):
     sys.exit(1)
 
 try:
-    # 2. Membaca data EDI
     mt = MT(file_path)
 
     freq = mt.Z.freq
@@ -31,15 +28,9 @@ try:
     phase_eff = mt.Z.phase_det
     periode = 1.0 / freq
 
-    # Mengambil nama file (misalnya 'saddle' atau 'keller')
     name_file = os.path.splitext(os.path.basename(file_path))[0]
     print(f"\n>>> Sukses memuat data: {name_file}.edi")
 
-    # =========================================================================
-    # 3. PROSES EKSPOR DATA DENGAN CUSTOM HEADER
-    # =========================================================================
-    
-    # Menentukan lokasi output file agar otomatis masuk ke folder 'MT' proyek Anda
     current_dir = os.path.dirname(os.path.abspath(__file__))
     input = input("untuk NA atau LM? (ketik 'NA' atau 'LM'): ").strip().upper()
 
@@ -53,19 +44,16 @@ try:
 
     output_path = os.path.join(current_dir, output_filename)
 
-    # Menggabungkan data menjadi tabel 3 kolom: Frekuensi | AppRes | Phase
     export_data = np.column_stack((freq, res_eff, phase_eff))
 
-    # Membuat text header dinamis mengikuti nama file yang di-drag
     header_text = f"Frequency(Hz_{name_file})\tAppRes(Ohm.m)\tPhase(deg)"
 
-    # Menyimpan file teks hasil ekstraksi
     np.savetxt(
         output_path, 
         export_data, 
         delimiter="\t", 
         header=header_text, 
-        comments=""  # Menghilangkan tanda '#' agar np.genfromtxt(..., skip_header=1) lancar
+        comments=""  
     )
 
     print("="*55)
@@ -74,9 +62,6 @@ try:
     print(f"Lokasi lengkap: {output_path}")
     print("="*55 + "\n")
 
-    # =========================================================================
-    # 4. PEMBUATAN PLOT VISUALISASI
-    # =========================================================================
     fig, ax1 = plt.subplots(figsize=(10, 5))
 
     ax1.loglog(periode, res_eff, 'ro-', label='AppRes (Zdet)')
