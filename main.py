@@ -91,16 +91,15 @@ if type != 1:
     lb_log = list(NP.log10(lb[:n])) + list(lb[n:])
     ub_log = list(NP.log10(ub[:n])) + list(ub[n:])
     appraisal_bounds = tuple(zip(lb_log, ub_log))
+    misfits_filter = misfits_filter * 10
 else:
-    # Jika Rosenbrock, biarkan bounds tetap linier
     appraisal_bounds = tuple(zip(lb, ub))
 
 results = NAAppraiser(
     initial_ensemble=models_filter,
     log_ppd= -misfits_filter,
     bounds = appraisal_bounds,
-    n_resample=10000,
-    n_walkers=10
+    n_resample=10000
 )
 
 results.run()

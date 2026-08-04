@@ -2,52 +2,194 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
 from typing import Tuple
-import warnings
-from joblib import Parallel, delayed
-from tqdm import tqdm
-from os import cpu_count
+from numba import njit, prange
+from tqdm.auto import tqdm
 
 from ._mcintegrals import MCIntegrals
 
 
-class NAAppraiser:
+@njit(parallel=True, fastmath=True)
+def numba_compute_distances(xA: np.ndarray, initial_ensemble: np.ndarray, Cm: np.ndarray, axis: int):
+    Ne = initial_ensemble.shape[0]
+    Nd = initial_ensemble.shape[1]
+    
+    d2 = np.zeros(Ne)
+    dk2 = np.zeros(Ne)
+    
+    for j in prange(Ne):
+        dist_total = 0.0
+        dist_perp = 0.0
+        for i in range(Nd):
+            diff_sq = (xA[i] - initial_ensemble[j, i]) ** 2
+            scaled_dist = diff_sq * Cm[i]
+            dist_total += scaled_dist
+            if i != axis:
+                dist_perp += scaled_dist
+        d2[j] = dist_total
+        dk2[j] = dist_perp
+        
+    k = np.argmin(d2)
+    return k, dk2
 
+
+@njit(fastmath=True)
+def numba_get_axis_intersections(axis: int, k: int, di2: np.ndarray, initial_ensemble: np.ndarray, Cm: np.ndarray, down: bool):
+    intersections = []
+    cells = []
+    Ne = initial_ensemble.shape[0]
+    
+    current_k = k
+    while True:
+        vki = initial_ensemble[current_k, axis]
+        best_xji = np.inf if down else -np.inf
+        k_new = -1
+        
+        for j in range(Ne):
+            if j == current_k:
+                continue
+                
+            vji = initial_ensemble[j, axis]
+            b = Cm[axis] * (vki - vji)
+            
+            if b == 0.0:
+                continue
+                
+            a = di2[current_k] - di2[j]
+            xji = 0.5 * (vki + vji + a / b)
+            
+            if down:
+                if vki > vji:
+                    if k_new == -1 or xji > best_xji:
+                        best_xji = xji
+                        k_new = j
+            else:
+                if vki < vji:
+                    if k_new == -1 or xji < best_xji:
+                        best_xji = xji
+                        k_new = j
+        
+        if k_new != -1:
+            intersections.append(best_xji)
+            cells.append(k_new)
+            current_k = k_new
+        else:
+            break
+            
+    return intersections, cells
+
+@njit(fastmath=True)
+def numba_identify_cell(xp: float, intersections: np.ndarray, cells: np.ndarray) -> int:
+    closest_intersection = np.argmin(np.abs(intersections - xp))
+    if xp < intersections[closest_intersection]:
+        cell_id = closest_intersection
+    else:
+        cell_id = closest_intersection + 1
+    return cells[cell_id]
+
+@njit(fastmath=True)
+def numba_random_step(axis: int, intersections: np.ndarray, cells: np.ndarray, lower: np.ndarray, upper: np.ndarray, log_ppd: np.ndarray):
+    while True:
+        xpi = np.random.uniform(lower[axis], upper[axis])
+        k = numba_identify_cell(xpi, intersections, cells)
+
+        r = np.random.uniform(0.0, 1.0)
+        logPxpi = log_ppd[k]
+        
+        max_val = -np.inf
+        for c in cells:
+            if log_ppd[c] > max_val:
+                max_val = log_ppd[c]
+                
+        if np.log(r) < logPxpi - max_val:
+            return xpi
+
+@njit(fastmath=True)
+def numba_execute_walk_batch(batch_size: int, nd: int, xA: np.ndarray, initial_ensemble: np.ndarray, Cm: np.ndarray, lower: np.ndarray, upper: np.ndarray, log_ppd: np.ndarray):
+    samples_out = np.zeros((batch_size, nd))
+    
+    for s in range(batch_size):
+        for i in range(nd):
+            k, dk2 = numba_compute_distances(xA, initial_ensemble, Cm, i)
+            
+            down_i, down_c = numba_get_axis_intersections(i, k, dk2, initial_ensemble, Cm, True)
+            up_i, up_c = numba_get_axis_intersections(i, k, dk2, initial_ensemble, Cm, False)
+            
+            n_down = len(down_i)
+            n_up = len(up_i)
+            total_elements = n_down + n_up
+            
+            intersections_arr = np.zeros(total_elements)
+            cells_arr = np.zeros(total_elements + 1, dtype=np.int64)
+            
+            for idx in range(n_down):
+                intersections_arr[idx] = down_i[n_down - 1 - idx]
+                cells_arr[idx] = down_c[n_down - 1 - idx]
+                
+            cells_arr[n_down] = k
+            
+            for idx in range(n_up):
+                intersections_arr[n_down + idx] = up_i[idx]
+                cells_arr[n_down + 1 + idx] = up_c[idx]
+                
+            xpi = numba_random_step(i, intersections_arr, cells_arr, lower, upper, log_ppd)
+            xA[i] = xpi
+            
+        samples_out[s] = xA.copy()
+        
+    return samples_out, xA
+
+class NAAppraiser:
     def __init__(
         self,
-        n_resample: int,                                           #       
-        n_walkers: int = 1,                                        # 
-        initial_ensemble: NDArray | None = None,                   #
-        log_ppd: NDArray | None = None,                            #
-        bounds: Tuple[Tuple[float, float], ...] | None = None,     #
+        n_resample: int,
+        n_walkers: int = 1,
+        initial_ensemble: NDArray | None = None,
+        log_ppd: NDArray | None = None,
+        bounds: Tuple[Tuple[float, float], ...] | None = None,
         verbose: bool = True,
         seed: int | None = None,
     ):
-
-        self.initial_ensemble = initial_ensemble    #
-        self.log_ppd = log_ppd                      #
-        self.bounds = bounds                        #
+        self.initial_ensemble = initial_ensemble
+        self.log_ppd = log_ppd
+        self.bounds = bounds
         self.nd = len(bounds) 
         self.lower = np.array([b[0] for b in bounds])
         self.upper = np.array([b[1] for b in bounds])
         self.Cm = 1 / (self.upper - self.lower) ** 2
         self.verbose = verbose
-
         self.Ne = len(initial_ensemble)
-        self.j = n_walkers if n_walkers >= 1 else 1
-        self.nr = n_resample // n_walkers
+        self.nr = n_resample
 
-        ss = np.random.SeedSequence(seed)
-        self.rngs = [np.random.default_rng(s) for s in ss.spawn(self.j)]
-        #rngs random seed for each walker 
+        if seed is not None:
+            np.random.seed(seed)
 
-    def run(self, save: bool = True, start_fraction: float = 0.5) -> None:
+    def run(self, save: bool = True, start_fraction: float = 0.5, callback=None) -> None:
+        start_cell = np.argmax(self.log_ppd)
+        accumulator = MCIntegrals(self.nd, save)
         
-        if self.j == 1:
-            accumulator = self._run_serial(save)
-        else:
-            if start_fraction < 0 or start_fraction > 1:
-                raise ValueError("start_fraction must be between 0 and 1")
-            accumulator = self._run_parallel(save, start_fraction)
+        xA = self.initial_ensemble[start_cell].copy()
+        
+        batch_size = 10 
+        total_samples_collected = 0
+                  
+        with tqdm(total=self.nr, desc="Resampling", disable=not self.verbose) as pbar:
+            while total_samples_collected < self.nr:
+                current_batch = min(batch_size, self.nr - total_samples_collected)
+                
+                batch_samples, xA = numba_execute_walk_batch(
+                    current_batch, self.nd, xA, self.initial_ensemble, 
+                    self.Cm, self.lower, self.upper, self.log_ppd
+                )
+                
+                for s_idx in range(current_batch):
+                    accumulator.accumulate(batch_samples[s_idx])
+                    
+                total_samples_collected += current_batch
+                
+                pbar.update(current_batch)
+                
+                if callback is not None:
+                    callback(total_samples_collected, self.nr)
 
         self.mean = accumulator.mean()
         self.sample_mean_error = accumulator.sample_mean_error()
@@ -55,183 +197,3 @@ class NAAppraiser:
         self.sample_covariance_error = accumulator.sample_covariance_error()
         if save and accumulator.samples is not None:
             self.samples = np.stack(accumulator.samples)
-
-    def _run_serial(self, save: bool = True) :#-> MCIntegrals:
-        start = np.argmax(self.log_ppd)
-        accumulator = MCIntegrals(self.nd, save)
-        #print (accumulator)
-        #exit()
-        for x in self._random_walk_through_parameter_space(self.rngs[0], start):
-            accumulator.accumulate(x)
-        return accumulator
-    def _run_parallel(
-        self, save: bool = True, start_fraction: float = 0.5
-    ) -> MCIntegrals:
-        n_jobs = min(self.j, cpu_count())
-        with Parallel(n_jobs=n_jobs) as parallel:
-            # select start points for the random walks
-            # these are taken from the best start_fraction*100% of cells to avoid walking
-            # in low probability regions
-            int_threshold = int(self.Ne * start_fraction)
-            start_points = np.random.choice(
-                np.argpartition(self.log_ppd, -int_threshold)[-int_threshold:],
-                self.j,
-                replace=False,
-            )
-            # ensure that at least one walker starts at the best cell
-            start_points[0] = np.argmax(self.log_ppd)
-
-            # create a MCIntegrals object for each walker
-            accumulators = [MCIntegrals(self.nd, save) for _ in range(self.j)]
-
-            # run the walkers in parallel
-            accumulators = parallel(
-                delayed(self._appraise)(acc, rng, start)
-                for acc, rng, start in zip(accumulators, self.rngs, start_points)
-            )
-
-        # combine the results
-        accumulator = MCIntegrals(self.nd, save)
-        for acc in accumulators:
-            accumulator.accumulate(acc)
-
-        return accumulator
-
-    def _appraise(
-        self,
-        accumulator: MCIntegrals,
-        rng: np.random.Generator,
-        start_k: int = 0,
-    ):
-        for x in self._random_walk_through_parameter_space(rng, start_k):
-            accumulator.accumulate(x)
-        return accumulator
-
-    def _random_walk_through_parameter_space(
-        self, rng: np.random.Generator, start_k: int = 0
-    ):
-        """
-        Perform the random walk through parameter space.
-        Yields a new sample at each iteration to be used for calculating summary statistics.
-        """
-        xA = self.initial_ensemble[start_k].copy()
-        for _ in tqdm(
-            range(self.nr), desc="NAII - Random Walk", disable=not self.verbose
-        ):
-            for i in range(self.nd):
-                intersections, cells = self._axis_intersections(i, xA)
-                xpi = self._random_step(i, intersections, cells, rng)
-                xA[i] = xpi
-            yield xA
-
-    def _axis_intersections(self, axis: int, xA: NDArray) -> Tuple[NDArray, NDArray]:
-        """
-        Calculate the intersections of an axis passing through point vk in the kth cell
-        with the boundaries of all cells
-
-        Returns the intersection points and the cells the axis passes through
-        """
-
-        # The perpendicular distance to the axis from the current point in the walk
-        # is constant as we traverse along the axis, so calculate before recursion
-        d = (
-            xA - self.initial_ensemble
-        ) ** 2  # component-wise squared distance to all other cells
-        d2 = np.sum(d * self.Cm, axis=1)  # total scaled distance to all other cells
-        k = np.argmin(d2)  # index of the nearest cell
-        dk2 = np.sum(
-            np.delete(d, axis, 1) * np.delete(self.Cm, axis), axis=1
-        )  # perpendicular distance to axis
-
-        # Travel down the axis
-        down_intersections, down_cells = self._get_axis_intersections(
-            axis, k, dk2, down=True
-        )
-        # reverse the order of the down intersections and cells
-        # so that the order of the intersections is from lowest to highest
-        down_intersections = down_intersections[::-1]
-        down_cells = down_cells[::-1]
-
-        # Travel up the axis
-        up_intersections, up_cells = self._get_axis_intersections(axis, k, dk2, up=True)
-
-        return np.array(down_intersections + up_intersections), np.array(
-            down_cells + [k] + up_cells
-        )
-
-    def _random_step(self, axis, intersections, cells, rng):
-        """
-        intersections are the points where the axis intersects the boundaries of the cells
-        """
-        while True:
-            xpi = rng.uniform(self.lower[axis], self.upper[axis])  # proposed step
-            k = self._identify_cell(xpi, intersections, cells)  # cell containing xpi
-
-            r = rng.uniform(0, 1)
-            logPxpi = self.log_ppd[k]
-            logPmax = np.max(self.log_ppd[cells])
-            if np.log(r) < logPxpi - logPmax:  # eqn (24) Sambridge 1999(II)
-                return xpi
-
-    def _get_axis_intersections(
-        self, axis: int, k: int, di2: NDArray, down: bool = False, up: bool = False
-    ):
-        """
-        axis: int - the axis to travel along
-        k: int - the index of the current cell
-        di2: NDArray - the perpendicular distance to the axis from current point in walk
-        down: bool - whether to travel down the axis
-        up: bool - whether to travel up the axis
-
-        Returns:
-            intersections: NDArray - the intersection points
-            cells: NDArray - the cells the axis passes through
-        """
-        assert not (down and up)
-
-        intersections = []
-        cells = []
-
-        # eqn (19) Sambridge 1999
-        vk = self.initial_ensemble[k]
-        vki = vk[axis]
-        vji = self.initial_ensemble[:, axis]
-        a = di2[k] - di2
-        b = self.Cm[axis] * (vki - vji)
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=RuntimeWarning)
-            xji = 0.5 * (vki + vji + a / b)
-
-        if down:
-            # isfinite check handles previous divide by zero
-            mask = (vki <= vji) | ~np.isfinite(xji)
-            closest = np.argmax
-        else:
-            mask = (vki >= vji) | ~np.isfinite(xji)
-            closest = np.argmin
-
-        xji = np.ma.array(xji, mask=mask)
-        if xji.count() > 0:  # valid intersections found
-            k_new = closest(xji)  # closest to vk
-            intersections += [xji[k_new]]
-            cells += [k_new]
-
-            new_intersections, new_cells = self._get_axis_intersections(
-                axis, k_new, di2, down, up
-            )
-            return intersections + new_intersections, cells + new_cells
-
-        return intersections, cells
-
-    def _identify_cell(self, xp: float, intersections: NDArray, cells: NDArray) -> int:
-        """
-        Given a set of intersections and the cells they pass through,
-        identify the cell that contains the point xp.
-        """
-        closest_intersection = np.argmin(np.abs(intersections - xp))
-        cell_id = (
-            closest_intersection
-            if xp < intersections[closest_intersection]
-            else closest_intersection + 1
-        )
-        return cells[cell_id]
